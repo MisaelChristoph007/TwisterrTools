@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sherlock CLI Final</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 10px;
+        background-color: #000;
+        color: #33ff33;
+        font-family: monospace;
+        font-size: 1rem;
+        position: relative;
+        overflow-x: hidden;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: -1;
+      }
+
+      .background-image {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        max-width: 200px;
+        width: 50vw;
+        opacity: 0.07;
+        z-index: -2;
+        pointer-events: none;
+      }
+
+      .line {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 5px;
+      }
+
+      input.inline-input {
+        background: none;
+        border: none;
+        outline: none;
+        color: #33ff33;
+        font-family: inherit;
+        font-size: 1rem;
+        flex: 1;
+      }
+
+      a {
+        color: #00ffff;
+        text-decoration: none;
+        word-break: break-word;
+      }
+
+      a:hover {
+        text-decoration: underline;
+      }
+
+      @keyframes blink {
+        50% {
+          opacity: 0;
+        }
+      }
+
+      .blinking-cursor::after {
+        content: "_";
+        animation: blink 1s infinite step-start;
+      }
+
+      #fileInput {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <img
+      src="https://i.pinimg.com/736x/90/12/7f/90127f0a740ef077077f4b671ef66aa3.jpg"
+      alt="Background"
+      class="background-image"
+    />
+
+    <input type="file" id="fileInput" accept=".txt" />
+
+    <div id="output"></div>
+
+    <script>
+      const output = document.getElementById("output");
+      const fileInput = document.getElementById("fileInput");
+      let wordlist = [];
+
+      const platforms = {
+        GitHub: "https://github.com/",
+        Twitter: "https://twitter.com/",
+        Instagram: "https://instagram.com/",
+        Facebook: "https://facebook.com/",
+        Reddit: "https://reddit.com/user/",
+        TikTok: "https://www.tiktok.com/@",
+        LinkedIn: "https://www.linkedin.com/in/",
+        Pinterest: "https://www.pinterest.com/",
+        Twitch: "https://twitch.tv/",
+        Steam: "https://steamcommunity.com/id/",
+        GitLab: "https://gitlab.com/",
+        "Dev.to": "https://dev.to/",
+        CodePen: "https://codepen.io/",
+        Replit: "https://replit.com/@",
+        HackerRank: "https://www.hackerrank.com/",
+        LeetCode: "https://leetcode.com/",
+        Snapchat: "https://www.snapchat.com/add/",
+        Medium: "https://medium.com/@",
+        Dribbble: "https://dribbble.com/",
+        Behance: "https://www.behance.net/",
+        Bandcamp: "https://bandcamp.com/",
+        SoundCloud: "https://soundcloud.com/",
+        "Last.fm": "https://www.last.fm/user/",
+        Patreon: "https://www.patreon.com/",
+        Quora: "https://www.quora.com/profile/",
+        YouTube: "https://www.youtube.com/@",
+        StackOverflow: "https://stackoverflow.com/users/",
+        Vimeo: "https://vimeo.com/",
+        Mixcloud: "https://www.mixcloud.com/",
+        Flickr: "https://www.flickr.com/people/",
+        Disqus: "https://disqus.com/by/",
+        Keybase: "https://keybase.io/",
+        "500px": "https://500px.com/",
+        Unsplash: "https://unsplash.com/@",
+        Goodreads: "https://www.goodreads.com/",
+        AboutMe: "https://about.me/",
+        ProductHunt: "https://www.producthunt.com/@",
+        Telegram: "https://t.me/",
+        Skype: "https://join.skype.com/invite/",
+        Discord: "https://discordapp.com/users/",
+        Etsy: "https://www.etsy.com/shop/",
+        eBay: "https://www.ebay.com/usr/",
+        Amazon: "https://www.amazon.com/",
+        DeviantArt: "https://www.deviantart.com/",
+        Gravatar: "https://en.gravatar.com/",
+        "9GAG": "https://9gag.com/u/",
+        HackerNews: "https://news.ycombinator.com/user?id=",
+        Slideshare: "https://www.slideshare.net/",
+        Scribd: "https://www.scribd.com/",
+        KoFi: "https://ko-fi.com/",
+        Letterboxd: "https://letterboxd.com/",
+        Mastodon: "https://mastodon.social/@",
+      };
+
+      function createInputLine() {
+        const line = document.createElement("div");
+        line.className = "line";
+
+        const prompt = document.createElement("span");
+        prompt.textContent = "user@webshell:$";
+
+        const input = document.createElement("input");
+        input.type = "text";
+        input.className = "inline-input";
+        input.autofocus = true;
+
+        line.appendChild(prompt);
+        line.appendChild(input);
+        output.appendChild(line);
+        input.focus();
+
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            const command = input.value.trim();
+            input.disabled = true;
+            handleCommand(command);
+          }
+        });
+      }
+
+      function handleCommand(command) {
+        const args = command.split(" ");
+        const cmd = args[0];
+        const param = args.slice(1).join(" ");
+
+        if (cmd === "./search" && param) {
+          simulateScan(param);
+        } else if (cmd === "./bf" && param) {
+          if (wordlist.length === 0) {
+            printLine(
+              "❗ Silakan upload wordlist dulu dengan ketik: $up-wordlist"
+            );
+            createInputLine();
+          } else {
+            simulateBruteforce(param);
+          }
+        } else if (cmd === "$up-wordlist") {
+          fileInput.click();
+        } else if (cmd === "clear") {
+          output.innerHTML = "";
+          createInputLine();
+        } else if (cmd === "help") {
+          printLine(
+            "Perintah tersedia:\n" +
+              "- search <username>\n" +
+              "- ./bruteforce <url>\n" +
+              "- upload-wordlist\n" +
+              "- clear\n" +
+              "- help"
+          );
+          createInputLine();
+        } else {
+          printLine(`Perintah tidak dikenal: ${cmd}`);
+          createInputLine();
+        }
+      }
+
+      fileInput.addEventListener("change", function () {
+        const file = this.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          const lines = e.target.result.split("\n");
+          wordlist = lines
+            .map((line) => line.trim())
+            .filter((line) => line.includes(":"))
+            .map((line) => {
+              const [user, pass] = line.split(":");
+              return { user, pass };
+            });
+          printLine(`✅ Wordlist berhasil dimuat (${wordlist.length} entri).`);
+          createInputLine();
+        };
+        reader.readAsText(file);
+      });
+
+      function simulateScan(username) {
+        const scanLine = document.createElement("div");
+        scanLine.textContent = `Scanning "${username}"...`;
+        output.appendChild(scanLine);
+
+        let dots = 0;
+        const interval = setInterval(() => {
+          dots = (dots + 1) % 4;
+          scanLine.textContent = `Scanning "${username}"${".".repeat(dots)}`;
+        }, 300);
+
+        setTimeout(() => {
+          clearInterval(interval);
+          output.removeChild(scanLine);
+          showAllLinksAnimated(username);
+        }, 2000);
+      }
+
+      function showAllLinksAnimated(username) {
+        const entries = Object.entries(platforms);
+        let index = 0;
+
+        const showNext = () => {
+          if (index < entries.length) {
+            const [site, base] = entries[index];
+            const url = base + username;
+            const line = document.createElement("div");
+            line.innerHTML = `${site}: <a href="${url}" target="_blank">${url}</a>`;
+            output.appendChild(line);
+            index++;
+            setTimeout(showNext, 60);
+          } else {
+            createInputLine();
+          }
+        };
+
+        showNext();
+      }
+
+      function simulateBruteforce(url) {
+        const validCombination = { user: "admin", pass: "admin123" };
+
+        printTyping(`Menjalankan bruteforce ke ${url}...`, () => {
+          let i = 0;
+
+          const attempt = () => {
+            if (i < wordlist.length) {
+              const { user, pass } = wordlist[i];
+              const line = document.createElement("div");
+              line.textContent = `Mencoba login: ${user} / ${pass}`;
+              output.appendChild(line);
+
+              if (
+                user === validCombination.user &&
+                pass === validCombination.pass
+              ) {
+                const success = document.createElement("div");
+                success.innerHTML = `<strong>✅ Login berhasil!</strong> → ${user} / ${pass}`;
+                output.appendChild(success);
+                createInputLine(); // Stop brute loop
+              } else {
+                i++;
+                setTimeout(attempt, 100);
+              }
+            } else {
+              const done = document.createElement("div");
+              done.textContent =
+                "Bruteforce selesai. Tidak ada kombinasi valid.";
+              output.appendChild(done);
+              createInputLine();
+            }
+          };
+
+          attempt();
+        });
+      }
+
+      function printLine(text) {
+        const line = document.createElement("div");
+        line.innerHTML = text;
+        output.appendChild(line);
+      }
+
+      function printTyping(text, callback) {
+        const line = document.createElement("div");
+        output.appendChild(line);
+        let i = 0;
+        const interval = setInterval(() => {
+          line.innerHTML =
+            text.substring(0, i++) + '<span class="blinking-cursor"></span>';
+          if (i > text.length) {
+            clearInterval(interval);
+            line.innerHTML = text;
+            callback && callback();
+          }
+        }, 30);
+      }
+
+      createInputLine();
+    </script>
+  </body>
+</html>
